@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smart Task Assistant</title>
+<style>
+:root {
+  --bg:#f4f6f8; --panel:#fff; --text:#111; --muted:#6b7280;
+  --accent:#007bff; --regex-color:#00acc1; --llm-color:#8e24aa;
+  --task-bg:#f3fff5; --event-bg:#fff7e6;
+}
+body.dark {
+  --bg:#0f1724; --panel:#1f2937; --text:#e5e7eb; --muted:#9ca3af;
+  --accent:#3b82f6; --regex-color:#06b6d4; --llm-color:#a855f7;
+  --task-bg:#10212e; --event-bg:#2c1d0f;
+}
+*{box-sizing:border-box}
+body {
+  margin:0; font-family: "Segoe UI", Roboto, system-ui;
+  background:var(--bg); color:var(--text); height:100vh; display:flex; overflow:hidden;
+}
+.wrapper{display:flex; width:100%; height:100%}
+
+/* LEFT CHAT */
+.chat { flex:3; display:flex; flex-direction:column; gap:10px; padding:18px; }
+.header { display:flex; justify-content:space-between; align-items:center; }
+.title{font-weight:700; font-size:18px; display:flex; gap:8px; align-items:center}
+.theme-btn{background:var(--panel); border:1px solid #ddd; padding:6px 12px; border-radius:12px; cursor:pointer; color:var(--text);}
+.chat-area { flex:1; background:var(--panel); border-radius:12px; padding:18px; overflow:auto; box-shadow:0 2px 6px rgba(0,0,0,0.04); }
+.input-row { display:flex; gap:10px; padding:12px; align-items:center; }
+.input-row input[type="text"]{
+  flex:1; padding:12px 16px; border-radius:22px; border:1px solid #ddd;
+  outline:none; background:var(--panel); color:var(--text);
+}
+.send-btn{ background:var(--accent); color:white; padding:10px 16px; border-radius:22px; border:none; cursor:pointer }
+
+/* message bubbles */
+.msg{display:inline-block; margin:10px 0; padding:12px 16px; border-radius:999px; max-width:70%;}
+.msg.user{ background:var(--accent); color:#fff; align-self:flex-end; border-bottom-right-radius:6px; }
+.msg.bot{ background:#eef2ff; color:var(--text); align-self:flex-start; border-bottom-left-radius:6px; display:flex; gap:8px; align-items:center; }
+.msg.bot.regex{ background:#e6fffa; border-left:6px solid var(--regex-color); }
+.msg.bot.llm{ background:#f7e9ff; border-left:6px solid var(--llm-color); }
+.small{ font-size:0.86rem; color:var(--muted); margin-left:8px; }
+
+/* RIGHT PANEL */
+.panel{ flex:1; background:var(--panel); border-left:1px solid rgba(0,0,0,0.05); padding:18px; overflow:auto; transition:background 0.3s;}
+.section-title{ font-weight:700; margin:8px 0; display:flex; align-items:center; gap:8px; }
+.list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+.item{
+  padding:10px 12px; border-radius:8px; border:1px solid rgba(0,0,0,0.03);
+  background:var(--task-bg); color:var(--text); display:flex; justify-content:space-between; align-items:center;
+}
+.item.event{ background:var(--event-bg); }
+.item.llm{ border-left:4px solid var(--llm-color); }
+.item.regex{ border-left:4px solid var(--regex-color); }
+
+/* Responsive */
+@media (max-width:900px){
+  .wrapper{flex-direction:column}
+  .panel{order:2;height:240px;border-left:none;border-top:1px solid rgba(0,0,0,0.04)}
+  .chat{order:1}
+}
+/* ======================================================
+   🔔 Reminder Popup Styles
+====================================================== */
+.popup {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  padding: 14px 18px;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.4s forwards;
+}
+.popup.fade-out {
+  animation: fadeOut 0.5s forwards;
+}
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateY(20px); }
+}
+
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="chat">
+    <div class="header">
+      <div class="title">💡 Smart Task Assistant</div>
+      <button id="themeToggle" class="theme-btn">🌙 Dark Mode</button>
+    </div>
+    <div id="chatArea" class="chat-area"></div>
+    <div class="input-row">
+      <input id="userInput" type="text" placeholder="Type your task or event..." autocomplete="off" />
+      <button id="sendBtn" class="send-btn">Send</button>
+    </div>
+  </div>
+
+  <div class="panel" id="memoryPanel">
+    <div class="section-title">📋 Tasks</div>
+    <div id="tasksList" class="list"></div>
+    <div class="section-title" style="margin-top:16px">🗓 Events</div>
+    <div id="eventsList" class="list"></div>
+  </div>
+</div>
+
+<script>
+const themeBtn=document.getElementById('themeToggle');
+themeBtn.addEventListener('click',()=>{
+  document.body.classList.toggle('dark');
+  themeBtn.textContent=document.body.classList.contains('dark')?'☀ Light Mode':'🌙 Dark Mode';
+});
+
+const chatArea=document.getElementById('chatArea');
+const userInput=document.getElementById('userInput');
+const sendBtn=document.getElementById('sendBtn');
+const tasksList=document.getElementById('tasksList');
+const eventsList=document.getElementById('eventsList');
+
+function appendUser(text){
+  const d=document.createElement('div');
+  d.className='msg user';
+  d.textContent=text;
+  chatArea.appendChild(d);
+  d.scrollIntoView({behavior:'smooth'});
+}
+function appendBot(text,source='regex'){
+  const d=document.createElement('div');
+  d.className='msg bot '+(source==='llm'?'llm':'regex');
+  d.textContent=text;
+  const s=document.createElement('div');
+  s.className='small';
+  s.textContent=source?('('+source.toUpperCase()+')'):'';
+  d.appendChild(s);
+  chatArea.appendChild(d);
+  d.scrollIntoView({behavior:'smooth'});
+}
+
+async function refreshMemory(){
+  try{
+    const r=await fetch('/memory');
+    if(!r.ok) throw new Error('failed');
+    const mem=await r.json();
+    renderMemory(mem);
+  }catch(e){console.warn(e);}
+}
+function renderMemory(mem){
+  tasksList.innerHTML='';
+  eventsList.innerHTML='';
+  (mem.tasks||[]).forEach(item=>{
+    const box=document.createElement('div');
+    box.className='item task '+(item.source==='llm'?'llm':'regex');
+    box.textContent=item.text||'';
+    const src=document.createElement('span');
+    src.className='source';
+    src.textContent=item.source?item.source.toUpperCase():'';
+    box.appendChild(src);
+    tasksList.appendChild(box);
+  });
+  (mem.events||[]).forEach(item=>{
+    const box=document.createElement('div');
+    box.className='item event '+(item.source==='llm'?'llm':'regex');
+    box.textContent=item.text||'';
+    const src=document.createElement('span');
+    src.className='source';
+    src.textContent=item.source?item.source.toUpperCase():'';
+    box.appendChild(src);
+    eventsList.appendChild(box);
+  });
+}
+
+async function sendMessage(){
+  const text=userInput.value.trim();
+  if(!text)return;
+  appendUser(text);
+  userInput.value='';
+  const lower=text.toLowerCase();
+  const doneWords=['done','finish','finished','completed','over'];
+  if(doneWords.some(w=>lower.includes(w))){
+    const res=await fetch('/remove-auto',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+    const payload=await res.json();
+    appendBot(payload.reply||'Completed','regex');
+    await refreshMemory();
+    return;
+  }
+  const res=await fetch('/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});
+  const payload=await res.json();
+  appendBot(payload.reply||'OK',payload.source||'regex');
+  await refreshMemory();
+}
+userInput.addEventListener('keydown',e=>{if(e.key==='Enter')sendMessage();});
+sendBtn.addEventListener('click',sendMessage);
+refreshMemory();
+setInterval(refreshMemory,4000);
+// ======================================================
+
+//<!-- ====================================================== -->
+//<!-- 🔔 Smart Task Assistant – Notifications -->
+//<!-- ====================================================== -->
+
+let ws_url = location.protocol === "https:" ? `wss://${location.host}/ws` : `ws://${location.host}/ws`;
+let ws;
+
+function connectWebSocket() {
+  ws = new WebSocket(ws_url);
+
+  ws.onopen = () => console.log("✅ WebSocket connected");
+  ws.onclose = () => {
+    console.warn("⚠️ WebSocket closed, reconnecting...");
+    setTimeout(connectWebSocket, 5000);
+  };
+  ws.onerror = (err) => console.error("⚠️ WebSocket error:", err);
+
+  ws.onmessage = (event) => {
+    console.log("📩 Reminder received:", event.data);
+    try {
+      const data = JSON.parse(event.data);
+      const title = data.title || "Smart Task Assistant";
+      const message = data.message || event.data;
+
+      showPopup(`${title}: ${message}`);
+      showDesktopNotification(title, message);
+    } catch {
+      showPopup(event.data);
+      showDesktopNotification("Smart Task Assistant", event.data);
+    }
+  };
+}
+
+connectWebSocket();
+
+/* 🟦 In-page popup */
+function showPopup(message) {
+  const popup = document.createElement("div");
+  popup.className = "popup";
+  popup.textContent = message;
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    popup.classList.add("fade-out");
+    setTimeout(() => popup.remove(), 600);
+  }, 5000);
+}
+
+/* 💻 Chrome Desktop Notification */
+function showDesktopNotification(title, message) {
+  if (!("Notification" in window)) {
+    console.warn("Browser does not support notifications.");
+    return;
+  }
+
+  if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+
+  if (Notification.permission === "granted") {
+    new Notification(title, {
+      body: message,
+      icon: "https://cdn-icons-png.flaticon.com/512/4727/4727070.png"
+    });
+  } else {
+    console.log("🔕 Notifications blocked by user.");
+  }
+}
+
+// Ask for permission as soon as page loads
+document.addEventListener("DOMContentLoaded", () => {
+  if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+});
+
+
+
+
+</script>
+</body>
+</html>

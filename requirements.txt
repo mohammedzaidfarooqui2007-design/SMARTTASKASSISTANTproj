@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+groq
+python-dotenv
+jinja2
+python-multipart
+aiofiles
+fastapi[all]
+dateparser
+textblob
+langchain
