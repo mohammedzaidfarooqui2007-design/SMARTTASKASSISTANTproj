@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: smart-task-assistant
+    env: python
+    runtime: python-3.12.3
+    plan: free
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    startCommand: gunicorn app:app -k uvicorn.workers.UvicornWorker
