@@ -8,4 +8,11 @@ aiofiles
 fastapi[all]
 dateparser
 textblob
-langchain
+pymongo
+certifi
+websocket
+asyncio
+requests
+plyer
+gunicorn
+httpx
