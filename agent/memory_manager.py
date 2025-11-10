@@ -7,10 +7,31 @@ import certifi
 # 🧩 MONGO CONNECTION
 # ======================================================
 MONGO_URL = os.getenv("MONGO_URL")
-client = MongoClient(MONGO_URL, tls=True, tlsCAFile=certifi.where())
-db = client["smart_assistant"]
-tasks_collection = db["tasks"]
-events_collection = db["events"]
+
+try:
+    client = MongoClient(
+        MONGO_URL,
+        tls=True,
+        tlsCAFile=certifi.where(),
+        serverSelectionTimeoutMS=5000,
+        retryWrites=True,
+        w="majority"
+    )
+    db = client["smart_assistant"]
+    db.list_collection_names()  # quick connection test
+    print("✅ MongoDB connection successful on Render!")
+except Exception as e:
+    print("⚠ MongoDB connection failed:", e)
+    print("⚠ Running in offline mode (local memory only)")
+    client = None
+    db = None
+
+if db:
+    tasks_collection = db["tasks"]
+    events_collection = db["events"]
+else:
+    tasks_collection = []
+    events_collection = []
 
 import json
 import os
@@ -109,5 +130,6 @@ def get_all_items():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
     return tasks + events
+
 
 
