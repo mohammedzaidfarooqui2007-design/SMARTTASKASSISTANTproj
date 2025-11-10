@@ -1,12 +1,13 @@
 from pymongo import MongoClient
 from datetime import datetime
 import os
+import certifi
 
 # ======================================================
 # 🧩 MONGO CONNECTION
 # ======================================================
 MONGO_URL = os.getenv("MONGO_URL")
-client = MongoClient(MONGO_URL)
+client = MongoClient(MONGO_URL, tls=True, tlsCAFile=certifi.where())
 db = client["smart_assistant"]
 tasks_collection = db["tasks"]
 events_collection = db["events"]
@@ -108,4 +109,5 @@ def get_all_items():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
     return tasks + events
+
 
