@@ -2,11 +2,19 @@ from pymongo import MongoClient
 from datetime import datetime
 import os
 import certifi
+import json
 
 # ======================================================
 # 🧩 MONGO CONNECTION
 # ======================================================
-MONGO_URL = os.getenv("mongodb+srv://mdaqdushussain019_db_user:aqdus019@cluster0.pcew0uy.mongodb.net/?appName=Cluster0")
+
+from pymongo import MongoClient
+import certifi
+
+# ======================================================
+# 🧩 DIRECT MONGO CONNECTION (no environment variable)
+# ======================================================
+MONGO_URL = "mongodb+srv://mdaqdushussain019_db_user:aqdus019@cluster0.pcew0uy.mongodb.net/?retryWrites=true&w=majority"
 
 try:
     client = MongoClient(
@@ -21,8 +29,8 @@ try:
     db.list_collection_names()  # quick connection test
     print("✅ MongoDB connection successful on Render!")
 except Exception as e:
-    print("⚠ MongoDB connection failed:", e)
-    print("⚠ Running in offline mode (local memory only)")
+    print("⚠️ MongoDB connection failed:", e)
+    print("⚠️ Running in offline mode (local memory only)")
     client = None
     db = None
 
@@ -35,9 +43,7 @@ else:
 
 import json
 import os
-
 MEMORY_FILE = os.path.join(os.path.dirname(__file__), "memory.json")
-
 def load_memory():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
@@ -130,6 +136,7 @@ def get_all_items():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
     return tasks + events
+
 
 
 
