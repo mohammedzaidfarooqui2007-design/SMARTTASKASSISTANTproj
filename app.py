@@ -11,8 +11,7 @@ from contextlib import asynccontextmanager
 # ======================================================
 # 🔗 MONGODB CONNECTION (with fallback)
 # ======================================================
-MONGO_URL = "mongodb+srv://aqdushussain701_db_user:aqdus019@cluster0.rxexivl.mongodb.net/?appName=Cluster0"
-
+MONGO_URL = os.getenv("MONGO_URL")
 try:
     client = MongoClient(MONGO_URL, serverSelectionTimeoutMS=5000)
     client.server_info()  # Trigger connection
@@ -163,3 +162,4 @@ async def test_popup():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+
