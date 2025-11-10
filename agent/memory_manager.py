@@ -6,7 +6,7 @@ import certifi
 # ======================================================
 # 🧩 MONGO CONNECTION
 # ======================================================
-MONGO_URL = os.getenv("mongodb+srv://mdaqdushussain019_db_user:aqdus019@cluster0.13bw99i.mongodb.net/?appName=Cluster0")
+MONGO_URL = os.getenv("mongodb+srv://mdaqdushussain019_db_user:aqdus019@cluster0.pcew0uy.mongodb.net/?appName=Cluster0")
 
 try:
     client = MongoClient(
@@ -130,6 +130,7 @@ def get_all_items():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
     return tasks + events
+
 
 
 
