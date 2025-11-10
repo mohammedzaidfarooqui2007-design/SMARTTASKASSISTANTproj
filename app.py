@@ -1,3 +1,18 @@
+import nltk
+import textblob.download_corpora
+
+try:
+    textblob.download_corpora.download_all()
+    nltk.download('brown')
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('wordnet')
+    nltk.download('movie_reviews')
+    nltk.download('conll2000')
+    nltk.download('treebank')
+    print("✅ All TextBlob and NLTK corpora verified or downloaded.")
+except Exception as e:
+    print("⚠ Error downloading corpora:", e)
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -162,6 +177,7 @@ async def test_popup():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+
 
 
 
