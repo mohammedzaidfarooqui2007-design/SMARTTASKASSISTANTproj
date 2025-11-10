@@ -58,7 +58,7 @@ app = FastAPI(title="Smart Task Assistant", lifespan=lifespan)
 # 🧩 STATIC FILES & TEMPLATES
 # ======================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+#app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # ======================================================
@@ -162,6 +162,7 @@ async def test_popup():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+
 
 
 
