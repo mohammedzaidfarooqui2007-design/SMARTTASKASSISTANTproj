@@ -14,7 +14,7 @@ import certifi
 # ======================================================
 # 🧩 DIRECT MONGO CONNECTION (no environment variable)
 # ======================================================
-MONGO_URL = "mongodb+srv://mdaqdushussain019_db_user:aqdus019@cluster0.pcew0uy.mongodb.net/?retryWrites=true&w=majority"
+MONGO_URL= "mongodb+srv://mohammedzaidfarooqui7_db_user:zaid_014@cluster0.gvvsnna.mongodb.net/?appName=Cluster0"
 
 try:
     client = MongoClient(
@@ -136,6 +136,7 @@ def get_all_items():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
     return tasks + events
+
 
 
 
