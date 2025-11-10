@@ -34,7 +34,7 @@ except Exception as e:
     client = None
     db = None
 
-if db:
+if db is not None:
     tasks_collection = db["tasks"]
     events_collection = db["events"]
 else:
@@ -136,6 +136,7 @@ def get_all_items():
     tasks = list(tasks_collection.find({}, {"_id": 0}))
     events = list(events_collection.find({}, {"_id": 0}))
     return tasks + events
+
 
 
 
